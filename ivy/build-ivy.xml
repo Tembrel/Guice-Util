@@ -1,0 +1,93 @@
+<project name="ivy" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <description>
+    Ensure that the Apache Ivy dependency manager is available
+    and provide targets for build files that import this file:
+    - resolve
+    - clean-lib
+    - clean-ivy
+  </description>
+
+  <dirname property="ivy.basedir" file="${ant.file.ivy}" />
+
+  <property file="${ivy.basedir}/build-ivy.properties"/>
+
+
+  <!--
+   ! Setting up Ivy
+   !-->
+
+  <target name="init-ivy"
+    depends="download-ivy-jar"	
+  >
+    <path id="ivy.classpath">
+      <fileset dir="${ivy.jar.dir}" includes="${ivy.jar.name}"/>
+    </path>
+    <taskdef
+      resource="org/apache/ivy/ant/antlib.xml"
+      uri="antlib:org.apache.ivy.ant"
+      classpathref="ivy.classpath"
+    />
+    <ivy:settings file="${ivy.basedir}/ivysettings.xml"/>
+  </target>
+
+  <target name="download-ivy-jar"
+    depends="check-ivy-jar"
+    unless="${ivy.jar.exists}"
+  >
+    <echo message="Getting Ivy jar..."/>
+    <mkdir dir="${ivy.jar.dir}"/>
+    <get
+      src="${ivy.jar.url}"
+      dest="${ivy.jar}"
+      usetimestamp="true"
+      ignoreerrors="true"
+    />
+  </target>
+
+  <target name="check-ivy-jar">
+    <condition property="ivy.jar.exists">
+      <resourceexists>
+	<file file="${ivy.jar}"/>
+      </resourceexists>
+    </condition>
+  </target>
+
+
+  <!--
+   ! Resolve dependencies
+   !-->
+
+  <target name="resolve"
+    depends="init-ivy"
+    description="resolve and retrieve dependencies with ivy"
+  >
+    <mkdir dir="${lib.dir}"/>
+    <ivy:retrieve type="jar, bundle" sync="true"/>
+  </target>
+
+
+  <!--
+   ! Cleanup
+   !-->
+
+  <target name="clean-lib"
+    description="clean the lib directory"
+  >
+    <delete>
+      <fileset dir="${lib.dir}" includes="*.jar" />
+    </delete>
+  </target>
+
+  <target name="clean-ivy"
+    description="clean ivy jar and cache"
+  >
+    <!--
+     ! Would use this but it requires Ivy jar:
+     ! <ivy:cleancache />
+     !-->
+    <delete dir="${ivy.cache.dir}" />
+    <delete dir="${ivy.jar.dir}" />
+  </target>
+
+</project>

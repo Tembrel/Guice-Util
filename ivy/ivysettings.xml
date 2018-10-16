@@ -1,0 +1,14 @@
+<ivysettings>
+  <!-- Allows override of build-ivy.properties -->
+  <properties file="build.properties" />
+
+  <settings defaultResolver="public" defaultConflictManager="all" />
+
+  <caches default="local-cache">
+    <cache name="local-cache" basedir="${ivy.cache.dir}" />
+  </caches>
+
+  <resolvers>
+    <ibiblio name="public" m2compatible="true" usepoms="true" />
+  </resolvers>
+</ivysettings>

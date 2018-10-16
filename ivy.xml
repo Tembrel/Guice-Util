@@ -1,0 +1,14 @@
+<ivy-module version="2.0">
+    <info organisation="com.example" module="expr" />
+    <dependencies>
+        <dependency org="com.google.errorprone" name="error_prone_ant" rev="2.3.1" />
+        <dependency org="com.google.inject" name="guice" rev="4.2.1" />
+        <dependency org="junit" name="junit" rev="4.12" />
+	
+	<!--
+	 ! This module is already part of the Ant installation,
+	 ! with no need to resolve it to the local lib directory.
+	 !-->
+        <exclude org="org.apache.ant" module="ant" />
+    </dependencies>
+</ivy-module>

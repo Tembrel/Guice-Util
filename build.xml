@@ -1,0 +1,219 @@
+<project name="guice-util" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+  <description>
+    Guice utilities
+  </description>
+
+
+  <!--
+   ! Common properties defined before importing the Ivy
+   ! initialization build file.
+   !-->
+
+  <property file="build.properties"/>
+
+
+  <!--
+   ! Define "resolve", "clean-lib", and "clean-ivy-cache" targets,
+   ! downloading the Apache Ivy jar, if necessary.
+   !-->
+
+  <import file="ivy/build-ivy.xml"/>
+
+
+  <!--
+   ! Common paths
+   !-->
+
+  <path id="compile.classpath">
+    <fileset dir="${lib.dir}" includes="*.jar" />
+  </path>
+
+  <path id="runtime.classpath">
+    <path refid="compile.classpath" />
+    <path location="${classes.dir}" />
+  </path>
+
+  <path id="test.classpath">
+    <path refid="runtime.classpath" />
+    <path location="${test.classes.dir}" />
+  </path>
+
+  <path id="errorprone.classpath">
+    <fileset dir="${lib.dir}" includes="com.google.errorprone-error_prone_*.jar"/>
+  </path>
+
+
+  <!--
+   ! Compilation
+   !-->
+
+  <target name="compile"
+    depends="resolve"
+  >
+    <mkdir dir="${classes.dir}" />
+    <javac
+      srcdir="${src.dir}"
+      destdir="${classes.dir}"
+      classpathref="compile.classpath"
+      compiler="${errorprone.adapter}"
+      encoding="UTF-8"
+      debug="${build.debug}"
+      includeAntRuntime="false"
+      verbose="${build.verbose}"
+    >
+      <compilerclasspath refid="errorprone.classpath"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xep:RemoveUnusedImports"/>
+      <compilerarg value="-Xep:ComparisonContractViolated"/>
+      <exclude name="**/package-info.java" />
+    </javac>
+  </target>
+
+
+  <!--
+   ! Testing
+   !-->
+
+  <target name="test"
+    depends="run-test-reports"
+  >
+    <echo>Finished tests</echo>
+  </target>
+
+  <target name="compile-tests"
+    depends="compile"
+  >
+    <mkdir dir="${test.classes.dir}" />
+    <javac
+      srcdir="${test.src.dir}"
+      destdir="${test.classes.dir}"
+      classpathref="runtime.classpath"
+      compiler="${errorprone.adapter}"
+      encoding="UTF-8"
+      debug="true"
+      includeAntRuntime="false"
+      verbose="${build.verbose}"
+    >
+      <compilerclasspath refid="errorprone.classpath"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xep:RemoveUnusedImports"/>
+      <exclude name="**/package-info.java" />
+    </javac>
+  </target>
+
+  <target name="run-tests"
+    depends="compile-tests"
+  >
+    <mkdir dir="${tests.dir}" />
+    <junit
+      printsummary="true"
+      showoutput="false"
+      fork="true"
+      haltonfailure="false"
+      errorProperty="tests.errors"
+      failureProperty="tests.failed"
+    >
+      <assertions>
+	<enable />
+      </assertions>
+      <classpath refid="test.classpath"/>
+      <formatter type="xml"/>
+      <batchtest todir="${tests.dir}">
+	<fileset dir="${test.classes.dir}">
+	  <include name="**/*Test.class" />
+	</fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="run-test-reports"
+    depends="run-tests"
+  >
+    <mkdir dir="${reports.dir}" />
+    <junitreport todir="${tests.dir}">
+	<fileset dir="${tests.dir}">
+	  <include name="TEST-*.xml"/>
+	</fileset>
+	<report todir="${reports.dir}"/>
+    </junitreport>
+    <fail if="tests.errors" message="Test(s) had errors, see ${reports.dir}/index.html for details." />
+    <fail if="tests.failed" message="Test(s) failed, see ${reports.dir}/index.html for details." />
+  </target>
+
+
+  <!--
+   ! Run a sample program (given by the main.class.name property)
+   !-->
+
+  <target name="run"
+    depends="compile-tests"
+    description="compile and run program named by main.class.name property"
+  >
+    <java
+      classpathref="test.classpath"
+      classname="${main.class.name}"
+      fork="true"
+    >
+      <assertions>
+	<enable />
+      </assertions>
+    </java>
+  </target>
+
+
+  <!--
+   ! Package as Jar
+   !-->
+  <target name="jar"
+    depends="test"
+  >
+    <jar destfile="${module.jar}">
+      <fileset dir="${classes.dir}" />
+      <manifest>
+	<attribute name="Built-By" value="${user.name}"/>
+	<attribute name="Build-Version" value="${module.version}" />
+      </manifest>
+    </jar>
+  </target>
+
+  <!--
+   ! Javadocs
+   !-->
+
+  <target name="doc"
+    depends="resolve"
+  >
+    <mkdir dir="${javadoc.dir}"/>
+    <javadoc
+      destdir="${javadoc.dir}"
+      classpathref="compile.classpath"
+      windowtitle="${doc.windowtitle}"
+      access="protected"
+      breakiterator="yes"
+      linksource="yes"
+    >
+      <tag name="impl.note" description="Implementation note:" />
+      <arg value="-Xdoclint:-missing"/>
+      <arg value="-notimestamp"/>
+      <packageset dir="${src.dir}" />
+      <link href="https://docs.oracle.com/javase/8/docs/api/" />
+    </javadoc>
+  </target>
+
+
+  <!--
+   ! Cleanup
+   !-->
+
+  <target name="clean"
+    description="clean build artifacts"
+  >
+    <delete dir="${build.dir}"/>
+  </target>
+  
+  <target name="clean-all" depends="clean, clean-lib" />
+
+</project>
